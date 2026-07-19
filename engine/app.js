@@ -681,7 +681,6 @@
 
   function createCart() {
     var ids = []; // stateless: populated only from the URL (?cart=)
-    var taught = false;
     var toastTimer = null;
 
     // Floating pill
@@ -690,7 +689,6 @@
     pill.className = "cart-pill";
     pill.hidden = true;
     pill.innerHTML = cartIcon() + '<span class="cart-pill-label">Cart</span> <span class="cart-pill-count"></span>';
-    pill.addEventListener("animationend", function () { pill.classList.remove("pulse"); });
     document.body.appendChild(pill);
 
     // Add-confirmation bubble
@@ -699,12 +697,13 @@
     toast.className = "cart-toast";
     toast.hidden = true;
     toast.setAttribute("aria-live", "polite");
+    toast.setAttribute("aria-label", "Added to cart — open cart");
     toast.innerHTML =
       '<span class="cart-toast-check" aria-hidden="true">&#10003;</span>' +
-      '<span class="cart-toast-msg"></span>';
+      '<span class="cart-toast-msg">Added</span>' +
+      '<span class="cart-toast-arrow" aria-hidden="true">&#8595;</span>';
     document.body.appendChild(toast);
 
-    var toastMsg = toast.querySelector(".cart-toast-msg");
     toast.addEventListener("click", function () { hideToast(); open(); });
 
     // Panel
@@ -764,15 +763,9 @@
     }
 
     function notifyAdded() {
-      var firstTime = !taught;
-      taught = true;
-      toastMsg.textContent = firstTime
-        ? "Added — open cart to email the seller →"
-        : "Added — email the seller →";
       toast.hidden = false;
-      if (firstTime) { pill.classList.remove("pulse"); void pill.offsetWidth; pill.classList.add("pulse"); }
       clearTimeout(toastTimer);
-      toastTimer = setTimeout(hideToast, firstTime ? 8000 : 5000);
+      toastTimer = setTimeout(hideToast, 4000);
     }
     function hideToast() { toast.hidden = true; clearTimeout(toastTimer); }
     function setFromIds(list) {
