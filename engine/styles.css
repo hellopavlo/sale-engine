@@ -566,7 +566,6 @@ body.lb-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden
   padding: 1px 6px;
   font-variant-numeric: tabular-nums;
 }
-/* One-shot nudge toward the cart on the first add of a session */
 .cart-pill.pulse { animation: cart-pill-pulse .5s ease; }
 @keyframes cart-pill-pulse {
   0% { transform: scale(1); }
@@ -575,36 +574,47 @@ body.lb-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden
   100% { transform: scale(1); }
 }
 
-/* Add-to-cart confirmation snackbar */
+/* Add-confirmation bubble — anchored just above the cart pill */
 .cart-toast {
   position: fixed;
-  left: 20px; bottom: 20px;
+  right: 20px; bottom: 74px;
   z-index: 80;
-  display: flex; align-items: center; gap: 12px;
-  max-width: min(380px, calc(100vw - 40px));
-  padding: 10px 12px;
-  background: var(--surface);
+  display: inline-flex; align-items: center; gap: 8px;
+  max-width: calc(100vw - 40px);
+  margin: 0;
+  padding: 9px 13px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  box-shadow: var(--shadow);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit; font-size: .85rem; font-weight: 600;
+  text-align: left;
   cursor: pointer;
+  box-shadow: var(--shadow);
   animation: cart-toast-in .18s ease;
 }
 .cart-toast[hidden] { display: none; }
-@keyframes cart-toast-in { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
-.cart-toast-thumb {
-  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 8px;
-  background: #e4e4e0 center/cover no-repeat;
+.cart-toast:hover { border-color: var(--accent); }
+/* tail pointing down at the pill */
+.cart-toast::after {
+  content: "";
+  position: absolute;
+  right: 22px; bottom: -7px;
+  width: 12px; height: 12px;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transform: rotate(45deg);
 }
-.cart-toast-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
-.cart-toast-title { font-weight: 700; font-size: .9rem; color: var(--ink); }
-.cart-toast-sub { font-size: .8rem; font-weight: 600; color: var(--accent); }
-.cart-toast-close {
-  flex: 0 0 auto; align-self: flex-start;
-  width: 26px; height: 26px; border: 0; border-radius: 6px;
-  background: none; color: var(--muted); cursor: pointer;
+@keyframes cart-toast-in { from { transform: translateY(6px); opacity: 0; } to { transform: none; opacity: 1; } }
+.cart-toast-check {
+  flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  background: var(--accent); color: var(--accent-ink);
+  font-size: .72rem;
 }
-.cart-toast-close:hover { background: var(--line); color: var(--ink); }
 @media (prefers-reduced-motion: reduce) {
   .cart-pill.pulse, .cart-toast { animation: none; }
 }
@@ -689,7 +699,7 @@ body.cartp-open { overflow: hidden; }
   .cat-backdrop[hidden] { display: none; }
   .cart-pill { right: 14px; bottom: 14px; }
   .cart-pill-label { display: none; }
-  .cart-toast { left: 12px; right: 12px; bottom: 74px; max-width: none; }
+  .cart-toast { right: 14px; bottom: 64px; max-width: calc(100vw - 28px); }
 }
 @media (max-width: 480px) {
   .grid { grid-template-columns: 1fr; gap: 14px; }

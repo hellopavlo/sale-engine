@@ -681,7 +681,7 @@
 
   function createCart() {
     var ids = []; // stateless: populated only from the URL (?cart=)
-    var taught = false;   // first add of the session gets the fuller "what next" copy
+    var taught = false;
     var toastTimer = null;
 
     // Floating pill
@@ -693,28 +693,19 @@
     pill.addEventListener("animationend", function () { pill.classList.remove("pulse"); });
     document.body.appendChild(pill);
 
-    // Add-confirmation snackbar. No quick fade, and never auto-opens the panel.
-    var toast = document.createElement("div");
+    // Add-confirmation bubble
+    var toast = document.createElement("button");
+    toast.type = "button";
     toast.className = "cart-toast";
     toast.hidden = true;
-    toast.setAttribute("role", "status");
     toast.setAttribute("aria-live", "polite");
     toast.innerHTML =
-      '<span class="cart-toast-thumb" aria-hidden="true"></span>' +
-      '<span class="cart-toast-text">' +
-        '<span class="cart-toast-title"></span>' +
-        '<span class="cart-toast-sub"></span>' +
-      '</span>' +
-      '<button class="cart-toast-close" type="button" aria-label="Dismiss">&#10005;</button>';
+      '<span class="cart-toast-check" aria-hidden="true">&#10003;</span>' +
+      '<span class="cart-toast-msg"></span>';
     document.body.appendChild(toast);
 
-    var toastThumb = toast.querySelector(".cart-toast-thumb");
-    var toastTitle = toast.querySelector(".cart-toast-title");
-    var toastSub = toast.querySelector(".cart-toast-sub");
-    toast.addEventListener("click", function (e) {
-      if (e.target.closest(".cart-toast-close")) { hideToast(); return; }
-      hideToast(); open();
-    });
+    var toastMsg = toast.querySelector(".cart-toast-msg");
+    toast.addEventListener("click", function () { hideToast(); open(); });
 
     // Panel
     var root = document.createElement("div");
@@ -769,21 +760,15 @@
       if (adding) ids.push(id); else ids.splice(i, 1);
       changed();
       if (!root.hidden) renderPanel();   // panel open: row updates in place, no toast
-      else if (adding) notifyAdded(id);
+      else if (adding) notifyAdded();
     }
 
-    function notifyAdded(id) {
-      var it = state.byId[id];
+    function notifyAdded() {
       var firstTime = !taught;
       taught = true;
-      toastThumb.style.backgroundImage = it && it.photos.length ? "url('" + THUMB_DIR + it.photos[0] + "')" : "";
-      if (firstTime) {
-        toastTitle.textContent = "Added to cart";
-        toastSub.textContent = "Open your cart, then email the seller to hold your items →";
-      } else {
-        toastTitle.textContent = ids.length + (ids.length === 1 ? " item in cart" : " items in cart");
-        toastSub.textContent = "Review cart & email the seller →";
-      }
+      toastMsg.textContent = firstTime
+        ? "Added — open cart to email the seller →"
+        : "Added — email the seller →";
       toast.hidden = false;
       if (firstTime) { pill.classList.remove("pulse"); void pill.offsetWidth; pill.classList.add("pulse"); }
       clearTimeout(toastTimer);
