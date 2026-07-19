@@ -322,7 +322,7 @@ button.card-media:hover img { transform: scale(1.03); }
 .card-more:hover { text-decoration: underline; }
 .card.is-clamped .card-more { display: inline-flex; }
 
-/* Add-to-reserve-list button on cards */
+/* Add-to-cart button on cards */
 .cart-add {
   margin-top: 16px;
   width: 100%;
@@ -566,6 +566,48 @@ body.lb-open { position: fixed; left: 0; right: 0; width: 100%; overflow: hidden
   padding: 1px 6px;
   font-variant-numeric: tabular-nums;
 }
+/* One-shot nudge toward the cart on the first add of a session */
+.cart-pill.pulse { animation: cart-pill-pulse .5s ease; }
+@keyframes cart-pill-pulse {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.12); }
+  60% { transform: scale(.97); }
+  100% { transform: scale(1); }
+}
+
+/* Add-to-cart confirmation snackbar */
+.cart-toast {
+  position: fixed;
+  left: 20px; bottom: 20px;
+  z-index: 80;
+  display: flex; align-items: center; gap: 12px;
+  max-width: min(380px, calc(100vw - 40px));
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  animation: cart-toast-in .18s ease;
+}
+.cart-toast[hidden] { display: none; }
+@keyframes cart-toast-in { from { transform: translateY(10px); opacity: 0; } to { transform: none; opacity: 1; } }
+.cart-toast-thumb {
+  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 8px;
+  background: #e4e4e0 center/cover no-repeat;
+}
+.cart-toast-text { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.cart-toast-title { font-weight: 700; font-size: .9rem; color: var(--ink); }
+.cart-toast-sub { font-size: .8rem; font-weight: 600; color: var(--accent); }
+.cart-toast-close {
+  flex: 0 0 auto; align-self: flex-start;
+  width: 26px; height: 26px; border: 0; border-radius: 6px;
+  background: none; color: var(--muted); cursor: pointer;
+}
+.cart-toast-close:hover { background: var(--line); color: var(--ink); }
+@media (prefers-reduced-motion: reduce) {
+  .cart-pill.pulse, .cart-toast { animation: none; }
+}
 
 /* Reserve list — panel */
 .cartp { position: fixed; inset: 0; z-index: 90; }
@@ -647,6 +689,7 @@ body.cartp-open { overflow: hidden; }
   .cat-backdrop[hidden] { display: none; }
   .cart-pill { right: 14px; bottom: 14px; }
   .cart-pill-label { display: none; }
+  .cart-toast { left: 12px; right: 12px; bottom: 74px; max-width: none; }
 }
 @media (max-width: 480px) {
   .grid { grid-template-columns: 1fr; gap: 14px; }

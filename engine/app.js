@@ -590,7 +590,7 @@
   function syncCartButton(b) {
     var inCart = cart.has(b.dataset.id);
     b.classList.toggle("in-cart", inCart);
-    b.textContent = inCart ? "✓ In your list" : "+ Add to reserve list";
+    b.textContent = inCart ? "✓ In cart" : "+ Add to cart";
     b.setAttribute("aria-pressed", inCart ? "true" : "false");
   }
 
@@ -681,14 +681,40 @@
 
   function createCart() {
     var ids = []; // stateless: populated only from the URL (?cart=)
+    var taught = false;   // first add of the session gets the fuller "what next" copy
+    var toastTimer = null;
 
     // Floating pill
     var pill = document.createElement("button");
     pill.type = "button";
     pill.className = "cart-pill";
     pill.hidden = true;
-    pill.innerHTML = bagIcon() + '<span class="cart-pill-count"></span> <span class="cart-pill-label">reserve list</span>';
+    pill.innerHTML = cartIcon() + '<span class="cart-pill-label">Cart</span> <span class="cart-pill-count"></span>';
+    pill.addEventListener("animationend", function () { pill.classList.remove("pulse"); });
     document.body.appendChild(pill);
+
+    // Add-confirmation snackbar. No quick fade, and never auto-opens the panel.
+    var toast = document.createElement("div");
+    toast.className = "cart-toast";
+    toast.hidden = true;
+    toast.setAttribute("role", "status");
+    toast.setAttribute("aria-live", "polite");
+    toast.innerHTML =
+      '<span class="cart-toast-thumb" aria-hidden="true"></span>' +
+      '<span class="cart-toast-text">' +
+        '<span class="cart-toast-title"></span>' +
+        '<span class="cart-toast-sub"></span>' +
+      '</span>' +
+      '<button class="cart-toast-close" type="button" aria-label="Dismiss">&#10005;</button>';
+    document.body.appendChild(toast);
+
+    var toastThumb = toast.querySelector(".cart-toast-thumb");
+    var toastTitle = toast.querySelector(".cart-toast-title");
+    var toastSub = toast.querySelector(".cart-toast-sub");
+    toast.addEventListener("click", function (e) {
+      if (e.target.closest(".cart-toast-close")) { hideToast(); return; }
+      hideToast(); open();
+    });
 
     // Panel
     var root = document.createElement("div");
@@ -696,18 +722,19 @@
     root.hidden = true;
     root.innerHTML =
       '<div class="cartp-backdrop"></div>' +
-      '<aside class="cartp-panel" role="dialog" aria-label="Reserve list">' +
-        '<header class="cartp-head"><h2>Your reserve list</h2>' +
+      '<aside class="cartp-panel" role="dialog" aria-label="Your cart">' +
+        '<header class="cartp-head"><h2>Your cart</h2>' +
           '<button class="cartp-close" type="button" aria-label="Close">&#10005;</button></header>' +
         '<div class="cartp-items"></div>' +
-        '<p class="cartp-empty">Your list is empty. Browse items and tap ' +
-          '<strong>“Add to reserve list”</strong> to build a request.</p>' +
+        '<p class="cartp-empty">Your cart is empty. Tap ' +
+          '<strong>“Add to cart”</strong> on the items you want, then email the seller to hold them for you.</p>' +
         '<footer class="cartp-foot">' +
-          '<p class="cartp-note">Send this list to the seller to ask them to hold these items for you.</p>' +
+          '<p class="cartp-note">Email your list and the seller will hold these items for you. ' +
+            '<strong>No online payment</strong> — you arrange pickup and pay in person.</p>' +
           '<div class="cartp-actions">' +
-            '<a class="cartp-email btn-primary" href="#">Email the seller</a>' +
+            '<a class="cartp-email btn-primary" href="#">Reserve these — email the seller</a>' +
             '<button class="cartp-copy btn" type="button">Copy share link</button>' +
-            '<button class="cartp-clear btn-ghost" type="button">Clear list</button>' +
+            '<button class="cartp-clear btn-ghost" type="button">Clear cart</button>' +
           '</div>' +
         '</footer>' +
       '</aside>';
@@ -738,10 +765,31 @@
     function toggle(id) {
       id = String(id);
       var i = ids.indexOf(id);
-      if (i === -1) ids.push(id); else ids.splice(i, 1);
+      var adding = i === -1;
+      if (adding) ids.push(id); else ids.splice(i, 1);
       changed();
-      if (!root.hidden) renderPanel();
+      if (!root.hidden) renderPanel();   // panel open: row updates in place, no toast
+      else if (adding) notifyAdded(id);
     }
+
+    function notifyAdded(id) {
+      var it = state.byId[id];
+      var firstTime = !taught;
+      taught = true;
+      toastThumb.style.backgroundImage = it && it.photos.length ? "url('" + THUMB_DIR + it.photos[0] + "')" : "";
+      if (firstTime) {
+        toastTitle.textContent = "Added to cart";
+        toastSub.textContent = "Open your cart, then email the seller to hold your items →";
+      } else {
+        toastTitle.textContent = ids.length + (ids.length === 1 ? " item in cart" : " items in cart");
+        toastSub.textContent = "Review cart & email the seller →";
+      }
+      toast.hidden = false;
+      if (firstTime) { pill.classList.remove("pulse"); void pill.offsetWidth; pill.classList.add("pulse"); }
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(hideToast, firstTime ? 8000 : 5000);
+    }
+    function hideToast() { toast.hidden = true; clearTimeout(toastTimer); }
     function setFromIds(list) {
       var seen = {};
       ids = list.map(String).filter(function (id) {
@@ -753,6 +801,8 @@
     function changed() {
       countEl.textContent = ids.length;
       pill.hidden = ids.length === 0;
+      pill.setAttribute("aria-label", "Cart, " + ids.length + (ids.length === 1 ? " item" : " items"));
+      if (ids.length === 0) hideToast(); // nothing left to review — don't leave a stale confirmation up
       syncCartButtons();
       writeURL();
     }
@@ -784,7 +834,10 @@
       emptyMsg.hidden = hasItems;
       foot.hidden = !hasItems;
       emailLink.hidden = !state.config.reserveEmail;
-      if (hasItems) emailLink.href = emailHref();
+      if (hasItems) {
+        emailLink.href = emailHref();
+        emailLink.textContent = "Reserve these — email the seller (" + ids.length + ")";
+      }
 
       ids.forEach(function (id) {
         var it = state.byId[id];
@@ -804,7 +857,7 @@
       });
     }
 
-    function open() { renderPanel(); root.hidden = false; document.body.classList.add("cartp-open"); root.querySelector(".cartp-close").focus(); }
+    function open() { hideToast(); renderPanel(); root.hidden = false; document.body.classList.add("cartp-open"); root.querySelector(".cartp-close").focus(); }
     function close() { root.hidden = true; document.body.classList.remove("cartp-open"); }
 
     // init pill state
@@ -1071,11 +1124,12 @@
       'd="M4 9.5a2 2 0 0 1 2-2h1.2l1-1.6a1 1 0 0 1 .85-.47h4.9a1 1 0 0 1 .85.47l1 1.6H18a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/>' +
       '<circle cx="12" cy="13" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>';
   }
-  function bagIcon() {
+  function cartIcon() {
     return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
-      '<path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" ' +
-      'd="M6 8h12l-1 11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z"/>' +
-      '<path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>';
+      '<path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ' +
+      'd="M3 4h2l2.1 10.4a1.5 1.5 0 0 0 1.5 1.2h7.9a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6"/>' +
+      '<circle cx="9.5" cy="19.5" r="1.4" fill="currentColor"/>' +
+      '<circle cx="17" cy="19.5" r="1.4" fill="currentColor"/></svg>';
   }
 
   function copyText(text, btn, okLabel) {
