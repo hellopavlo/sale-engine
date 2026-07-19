@@ -328,8 +328,12 @@
     if (!p) return false;
     syncFiltersFromURL(p);
     var cartParam = p.get("cart");
-    if (cartParam != null) cart.setFromIds(cartParam.split(",").filter(Boolean));
-    return cartParam != null;
+    if (cartParam != null) {
+      cart.setFromIds(cartParam.split(",").filter(Boolean)); // arrived via a shared link
+      return true;
+    }
+    cart.loadStored(); // otherwise restore the saved cart, panel stays closed
+    return false;
   }
 
   // Params that actually change the grid — everything except the modal and cart.
@@ -358,7 +362,7 @@
     if (state.activeCategories.size) p.set("c", Array.from(state.activeCategories).join(","));
     if (state.page > 1) p.set("p", String(state.page));
     if (state.lbItem) p.set("item", state.lbItem);
-    if (cart && cart.size()) p.set("cart", cart.ids().join(","));
+    if (cart && cart.size() && cart.isOpen()) p.set("cart", cart.ids().join(","));
     return p;
   }
 
@@ -680,8 +684,9 @@
   /* ---------- reserve list ("cart") ---------- */
 
   function createCart() {
-    var ids = []; // stateless: populated only from the URL (?cart=)
+    var ids = []; // item ids; persisted to localStorage, mirrored to ?cart= only while the panel is open
     var toastTimer = null;
+    var STORE_KEY = "sale-cart:" + location.pathname;
 
     // Floating pill
     var pill = document.createElement("button");
@@ -783,6 +788,16 @@
       if (ids.length === 0) hideToast(); // nothing left to review — don't leave a stale confirmation up
       syncCartButtons();
       writeURL();
+      saveStored();
+    }
+    function saveStored() {
+      try { localStorage.setItem(STORE_KEY, ids.join(",")); } catch (e) { /* storage unavailable */ }
+    }
+    // Restore a saved cart without opening the panel (unlike an incoming ?cart= link).
+    function loadStored() {
+      var raw = null;
+      try { raw = localStorage.getItem(STORE_KEY); } catch (e) { /* storage unavailable */ }
+      if (raw) setFromIds(raw.split(",").filter(Boolean));
     }
 
     function cartLink() {
@@ -835,17 +850,17 @@
       });
     }
 
-    function open() { hideToast(); renderPanel(); root.hidden = false; document.body.classList.add("cartp-open"); root.querySelector(".cartp-close").focus(); }
-    function close() { root.hidden = true; document.body.classList.remove("cartp-open"); }
+    function open() { hideToast(); renderPanel(); root.hidden = false; document.body.classList.add("cartp-open"); root.querySelector(".cartp-close").focus(); writeURL(); }
+    function close() { root.hidden = true; document.body.classList.remove("cartp-open"); writeURL(); }
 
     // init pill state
     countEl.textContent = ids.length;
     pill.hidden = ids.length === 0;
 
     return {
-      has: has, toggle: toggle, setFromIds: setFromIds,
+      has: has, toggle: toggle, setFromIds: setFromIds, loadStored: loadStored,
       size: function () { return ids.length; }, ids: function () { return ids.slice(); },
-      open: open,
+      open: open, isOpen: function () { return !root.hidden; },
     };
   }
 
