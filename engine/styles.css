@@ -238,7 +238,7 @@ button.card-media.is-empty:hover { background: #e4e4e2; }
 button.card-media:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .card-media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s ease; }
 button.card-media:hover img { transform: scale(1.03); }
-.placeholder { color: #a6a6a6; font-size: .85rem; letter-spacing: .03em; text-transform: uppercase; }
+.placeholder { color: #666; font-size: .85rem; letter-spacing: .03em; text-transform: uppercase; }
 
 /* photo-count pill on cards with multiple photos */
 .photo-count {

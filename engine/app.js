@@ -551,7 +551,10 @@
     var media = document.createElement("button");
     media.type = "button";
     media.className = "card-media" + (hasPhotos ? "" : " is-empty");
-    media.setAttribute("aria-label", (hasPhotos ? "View photos of " : "View details of ") + it.name);
+    media.setAttribute("aria-label",
+      !hasPhotos ? "View details of " + it.name + ", no photo"
+        : it.photos.length > 1 ? "View " + it.photos.length + " photos of " + it.name
+          : "View photos of " + it.name);
     media.addEventListener("click", function () { lb.open(it, 0); });
     if (hasPhotos) {
       var first = it.photos[0];
