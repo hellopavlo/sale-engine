@@ -200,7 +200,7 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
   gap: 20px;
   padding-top: 8px;
-  padding-bottom: 24px;
+  padding-bottom: 48px;
 }
 
 .card {
@@ -339,33 +339,6 @@ button.card-media:hover img { transform: scale(1.03); }
 }
 .cart-add:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .cart-add.in-cart { background: var(--accent); color: var(--accent-ink); }
-
-/* Pagination */
-.pager {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 8px;
-  padding-bottom: 48px;
-}
-.pager:empty { display: none; }
-.pager-btn {
-  font: inherit;
-  font-size: .9rem;
-  min-width: 38px;
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--ink);
-  cursor: pointer;
-  transition: border-color .12s, background .12s, color .12s;
-}
-.pager-btn:hover:not(:disabled):not(.is-current) { border-color: var(--accent); }
-.pager-btn.is-current { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); cursor: default; }
-.pager-btn:disabled { opacity: .4; cursor: default; }
-.pager-gap { padding: 0 4px; color: var(--muted); }
 
 /* States */
 .empty, .error { grid-column: 1 / -1; color: var(--muted); text-align: center; padding: 48px 12px; }

@@ -6,7 +6,7 @@
   var IMG_BASE = "assets/images/";
   var THUMB_DIR = IMG_BASE + "thumb/";
   var WEB_DIR = IMG_BASE + "web/";
-  var DEFAULT_PAGE_SIZE = 12;
+  var EAGER_IMAGE_COUNT = 4;
   var DEFAULT_SORT = "price-desc";
   var RENDERABLE_STATUSES = ["available", "reserved", "sold"];
 
@@ -18,8 +18,6 @@
     query: "",
     sort: DEFAULT_SORT,
     view: "available", // "available" | "hidden" (reserved + sold)
-    page: 1,
-    pageSize: DEFAULT_PAGE_SIZE,
     lbItem: null, // id of the item shown in the fullscreen card, mirrored to ?item=
   };
 
@@ -47,14 +45,12 @@
     els.activeFilters = document.getElementById("active-filters");
     els.grid = document.getElementById("grid");
     els.count = document.getElementById("result-count");
-    els.pager = document.getElementById("pager");
 
     showLoading();
     fetchJSON(DATA_DIR + "config.json")
       .catch(function () { return {}; })
       .then(function (cfg) {
         state.config = cfg || {};
-        state.pageSize = positiveInt(state.config.pageSize, DEFAULT_PAGE_SIZE);
         applyConfig(state.config);
         lb = createLightbox();
         cart = createCart();
@@ -166,11 +162,15 @@
     var raw_imgs = raw.images != null && raw.images !== "" ? raw.images : (raw.image || "");
     var photos = raw_imgs.split("|").map(function (s) { return s.trim(); }).filter(Boolean);
     var qn = parseInt((raw.quantity || "").replace(/[^0-9]/g, ""), 10);
+    var name = raw.name || "Untitled item";
+    var category = raw.category || "Misc";
+    var description = raw.description || "";
     return {
       id: (raw.id || String(i)).replace(/^\$/, "").trim(),
-      name: raw.name || "Untitled item",
-      category: raw.category || "Misc",
-      description: raw.description || "",
+      name: name,
+      category: category,
+      description: description,
+      searchKey: (name + " " + category + " " + description).toLowerCase(),
       photos: photos,
       status: status,
       condition: (raw.condition || "").trim(),
@@ -218,7 +218,6 @@
   function toggleCategory(name, on) {
     if (on) state.activeCategories.add(name);
     else state.activeCategories.delete(name);
-    state.page = 1;
     render("push");
   }
 
@@ -231,14 +230,13 @@
   function clearCategories() {
     state.activeCategories.clear();
     syncCategoryChecks();
-    state.page = 1;
     render("push");
   }
 
   function clearAllFilters() {
     state.query = ""; els.search.value = "";
     state.activeCategories.clear(); syncCategoryChecks();
-    state.page = 1; render("push");
+    render("push");
   }
 
   /* category dropdown open / close */
@@ -268,16 +266,15 @@
       var prevQuery = state.query;
       state.query = els.search.value.toLowerCase().trim();
       if (state.query === prevQuery) return;
-      state.page = 1;
       render(editingSearch ? "replace" : "push");
       editingSearch = true;
     });
     els.sort.addEventListener("change", function () {
-      state.sort = els.sort.value; state.page = 1; render("push");
+      state.sort = els.sort.value; render("push");
     });
     els.showHidden.addEventListener("change", function () {
       state.view = els.showHidden.checked ? "hidden" : "available";
-      state.page = 1; render("push");
+      render("push");
     });
     els.catToggle.addEventListener("click", toggleCatMenu);
     els.catClear.addEventListener("click", clearCategories);
@@ -302,7 +299,6 @@
     state.view = "available";
     state.sort = DEFAULT_SORT;
     state.activeCategories.clear();
-    state.page = 1;
 
     var q = p.get("q");
     els.search.value = q || "";
@@ -318,9 +314,6 @@
     var c = p.get("c");
     if (c) c.split(",").forEach(function (name) { if (name) state.activeCategories.add(name); });
     syncCategoryChecks();
-
-    var pg = parseInt(p.get("p"), 10);
-    if (!isNaN(pg) && pg > 0) state.page = pg;
   }
 
   function readURL() {
@@ -338,7 +331,7 @@
 
   // Params that actually change the grid — everything except the modal and cart.
   function gridSig(p) {
-    return ["q", "v", "s", "c", "p"].map(function (k) { return p.get(k) || ""; }).join("\x1f");
+    return ["q", "v", "s", "c"].map(function (k) { return p.get(k) || ""; }).join("\x1f");
   }
 
   function onPopState() {
@@ -360,7 +353,6 @@
     if (state.view === "hidden") p.set("v", "hidden");
     if (state.sort !== DEFAULT_SORT) p.set("s", state.sort);
     if (state.activeCategories.size) p.set("c", Array.from(state.activeCategories).join(","));
-    if (state.page > 1) p.set("p", String(state.page));
     if (state.lbItem) p.set("item", state.lbItem);
     if (cart && cart.size() && cart.isOpen()) p.set("cart", cart.ids().join(","));
     return p;
@@ -383,8 +375,7 @@
     return state.items.filter(function (it) {
       if (!inView(it)) return false;
       if (tokens.length) {
-        var hay = (it.name + " " + it.category + " " + it.description).toLowerCase();
-        return tokens.every(function (t) { return hay.indexOf(t) !== -1; });
+        return tokens.every(function (t) { return it.searchKey.indexOf(t) !== -1; });
       }
       return true;
     });
@@ -418,13 +409,6 @@
     var matched = sortItems(applyCategory(base));
     var total = matched.length;
 
-    var pageSize = state.pageSize;
-    var totalPages = Math.max(1, Math.ceil(total / pageSize));
-    if (state.page > totalPages) state.page = totalPages;
-    if (state.page < 1) state.page = 1;
-    var start = (state.page - 1) * pageSize;
-    var pageItems = matched.slice(start, start + pageSize);
-
     els.grid.innerHTML = "";
     if (!total) {
       els.grid.innerHTML = '<p class="empty">' +
@@ -432,26 +416,28 @@
         "</p>";
     } else {
       var frag = document.createDocumentFragment();
-      pageItems.forEach(function (it) { frag.appendChild(card(it)); });
+      matched.forEach(function (it, i) { frag.appendChild(card(it, i)); });
       els.grid.appendChild(frag);
     }
 
     var noun = state.view === "hidden" ? "reserved / sold item" : "item";
     els.count.textContent = !total ? "No " + noun + "s"
-      : "Showing " + (start + 1) + "–" + (start + pageItems.length) + " of " + total + " " + noun + (total === 1 ? "" : "s");
+      : "Showing " + total + " " + noun + (total === 1 ? "" : "s");
 
     updateCategoryUI();
-    renderPager(totalPages);
     markClamped();
     writeURL(nav);
   }
 
   // "Read more" only shows when the 3-line description is actually truncated.
+  // Reads (scrollHeight/clientHeight) are batched before any class write so the
+  // whole grid costs one forced layout rather than one per card.
   function markClamped() {
-    Array.prototype.forEach.call(els.grid.querySelectorAll(".card"), function (cardEl) {
-      var d = cardEl.querySelector(".card-desc");
-      if (d) cardEl.classList.toggle("is-clamped", d.scrollHeight > d.clientHeight + 1);
-    });
+    var cards = els.grid.querySelectorAll(".card");
+    var descs = [], clamp = [];
+    Array.prototype.forEach.call(cards, function (cardEl) { descs.push(cardEl.querySelector(".card-desc")); });
+    descs.forEach(function (d, i) { clamp[i] = d ? d.scrollHeight > d.clientHeight + 1 : false; });
+    Array.prototype.forEach.call(cards, function (cardEl, i) { if (descs[i]) cardEl.classList.toggle("is-clamped", clamp[i]); });
   }
 
   function updateCategoryCounts(base) {
@@ -485,7 +471,7 @@
       chip.setAttribute("aria-label", "Remove filter: " + name);
       chip.innerHTML = escapeHTML(name) + ' <span class="afilter-x" aria-hidden="true">×</span>';
       chip.addEventListener("click", function () {
-        state.activeCategories.delete(name); syncCategoryChecks(); state.page = 1; render("push");
+        state.activeCategories.delete(name); syncCategoryChecks(); render("push");
       });
       els.activeFilters.appendChild(chip);
     });
@@ -497,56 +483,12 @@
     els.activeFilters.appendChild(clearAll);
   }
 
-  function renderPager(totalPages) {
-    els.pager.innerHTML = "";
-    if (totalPages <= 1) return;
-    els.pager.appendChild(pagerButton("‹ Prev", state.page - 1, state.page === 1));
-    pageTokens(state.page, totalPages).forEach(function (tok) {
-      if (tok === "…") {
-        var span = document.createElement("span"); span.className = "pager-gap"; span.textContent = "…";
-        els.pager.appendChild(span);
-      } else {
-        els.pager.appendChild(pagerButton(String(tok), tok, false, tok === state.page));
-      }
-    });
-    els.pager.appendChild(pagerButton("Next ›", state.page + 1, state.page === totalPages));
-  }
-
-  function pagerButton(label, targetPage, disabled, current) {
-    var b = document.createElement("button");
-    b.type = "button";
-    b.className = "pager-btn" + (current ? " is-current" : "");
-    b.textContent = label;
-    if (current) b.setAttribute("aria-current", "page");
-    if (disabled) b.disabled = true;
-    else b.addEventListener("click", function () { goToPage(targetPage); });
-    return b;
-  }
-
-  function goToPage(p) {
-    state.page = p; render("push");
-    var bar = document.querySelector(".controls-bar");
-    var barH = bar ? bar.getBoundingClientRect().height : 0;
-    var top = els.count.getBoundingClientRect().top + window.pageYOffset - barH - 8;
-    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-  }
-
-  function pageTokens(cur, total) {
-    if (total <= 7) { var all = []; for (var i = 1; i <= total; i++) all.push(i); return all; }
-    var wanted = [1, 2, total - 1, total, cur - 1, cur, cur + 1], set = {};
-    wanted.forEach(function (n) { if (n >= 1 && n <= total) set[n] = true; });
-    var nums = Object.keys(set).map(Number).sort(function (a, b) { return a - b; });
-    var out = [], prev = 0;
-    nums.forEach(function (n) { if (prev && n - prev > 1) out.push("…"); out.push(n); prev = n; });
-    return out;
-  }
-
   /* ---------- cards ---------- */
 
-  function card(it) {
+  function card(it, pos) {
     var el = document.createElement("article");
     el.className = "card status-is-" + it.status;
-    el.appendChild(buildMedia(it));
+    el.appendChild(buildMedia(it, pos));
 
     var body = document.createElement("div");
     body.className = "card-body";
@@ -603,7 +545,7 @@
     Array.prototype.forEach.call(document.querySelectorAll(".cart-add"), syncCartButton);
   }
 
-  function buildMedia(it) {
+  function buildMedia(it, pos) {
     var hasPhotos = it.photos.length > 0;
     var media = document.createElement("button");
     media.type = "button";
@@ -612,7 +554,7 @@
     media.addEventListener("click", function () { lb.open(it, 0); });
     if (hasPhotos) {
       var first = it.photos[0];
-      media.appendChild(imgWithFallback([THUMB_DIR + first, WEB_DIR + first, IMG_BASE + first], it.name, media));
+      media.appendChild(imgWithFallback([THUMB_DIR + first, WEB_DIR + first, IMG_BASE + first], it.name, media, pos));
       if (it.photos.length > 1) {
         var pill = document.createElement("span");
         pill.className = "photo-count";
@@ -631,9 +573,16 @@
     return media;
   }
 
-  function imgWithFallback(srcs, alt, host) {
+  function imgWithFallback(srcs, alt, host, pos) {
     var img = document.createElement("img");
-    img.loading = "lazy"; img.alt = alt;
+    img.alt = alt;
+    if (pos < EAGER_IMAGE_COUNT) {
+      img.loading = "eager";
+      if (pos === 0) img.setAttribute("fetchpriority", "high"); // the one likely LCP image
+    } else {
+      img.loading = "lazy";
+      img.decoding = "async";
+    }
     var idx = 0;
     img.addEventListener("error", function () {
       idx += 1;
@@ -1149,7 +1098,6 @@
 
   function showLoading() {
     if (els.count) els.count.textContent = "";
-    if (els.pager) els.pager.innerHTML = "";
     els.grid.innerHTML =
       '<div class="loading"><span class="spinner" aria-hidden="true"></span>' +
       '<span>Loading items…</span></div>';
@@ -1157,7 +1105,6 @@
 
   function showError(err, retryable) {
     if (els.count) els.count.textContent = "";
-    if (els.pager) els.pager.innerHTML = "";
     var msg = escapeHTML(err && err.message ? err.message : String(err));
     els.grid.innerHTML =
       '<div class="error"><strong>Could not load the sale items.</strong><br>' + msg +
@@ -1173,7 +1120,6 @@
     arr.forEach(function (v) { if (!seen[v]) { seen[v] = true; out.push(v); } });
     return out.sort(function (a, b) { return a.localeCompare(b); });
   }
-  function positiveInt(v, fallback) { var n = parseInt(v, 10); return isNaN(n) || n < 1 ? fallback : n; }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
   function escapeHTML(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
