@@ -27,7 +27,8 @@
   var booted = false;
   var editingSearch = false; // true while consecutive search keystrokes coalesce into one history entry
 
-  document.addEventListener("DOMContentLoaded", boot);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
 
   function boot() {
     els.title = document.getElementById("sale-title");
