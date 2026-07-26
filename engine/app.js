@@ -5,6 +5,7 @@
   var DATA_DIR = "data/";
   var IMG_BASE = "assets/images/";
   var THUMB_DIR = IMG_BASE + "thumb/";
+  var THUMB_SM_DIR = IMG_BASE + "thumb-sm/";
   var WEB_DIR = IMG_BASE + "web/";
   var EAGER_IMAGE_COUNT = 4;
   var DEFAULT_SORT = "price-desc";
@@ -557,8 +558,7 @@
           : "View photos of " + it.name);
     media.addEventListener("click", function () { lb.open(it, 0); });
     if (hasPhotos) {
-      var first = it.photos[0];
-      media.appendChild(imgWithFallback([THUMB_DIR + first, WEB_DIR + first, IMG_BASE + first], it.name, media, pos));
+      media.appendChild(thumbImage(it, media, pos));
       if (it.photos.length > 1) {
         var pill = document.createElement("span");
         pill.className = "photo-count";
@@ -577,9 +577,14 @@
     return media;
   }
 
-  function imgWithFallback(srcs, alt, host, pos) {
+  function webpName(f) { return f.replace(/\.[^.]+$/, "") + ".webp"; }
+
+  function thumbImage(it, host, pos) {
+    var name = webpName(it.photos[0]);
     var img = document.createElement("img");
-    img.alt = alt;
+    img.alt = it.name;
+    img.src = THUMB_SM_DIR + name;
+    img.srcset = THUMB_SM_DIR + name + " 1x, " + THUMB_DIR + name + " 2x";
     if (pos < EAGER_IMAGE_COUNT) {
       img.loading = "eager";
       if (pos === 0) img.setAttribute("fetchpriority", "high"); // the one likely LCP image
@@ -587,13 +592,9 @@
       img.loading = "lazy";
       img.decoding = "async";
     }
-    var idx = 0;
     img.addEventListener("error", function () {
-      idx += 1;
-      if (idx < srcs.length) img.src = srcs[idx];
-      else if (host) { host.classList.add("is-empty"); img.remove(); host.insertBefore(placeholder(), host.firstChild); }
-    });
-    img.src = srcs[0];
+      host.classList.add("is-empty"); img.remove(); host.insertBefore(placeholder(), host.firstChild);
+    }, { once: true });
     return img;
   }
 
@@ -791,7 +792,7 @@
         var row = document.createElement("div");
         row.className = "cartp-row";
         var thumb = it.photos.length
-          ? '<img class="cartp-thumb" loading="lazy" alt="" src="' + THUMB_DIR + it.photos[0] + '">'
+          ? '<img class="cartp-thumb" loading="lazy" alt="" src="' + THUMB_DIR + webpName(it.photos[0]) + '">'
           : '<span class="cartp-thumb is-empty" aria-hidden="true"></span>';
         row.innerHTML =
           thumb +
@@ -962,9 +963,8 @@
       desc.hidden = !item.description;
       prevBtn.hidden = !multi; nextBtn.hidden = !multi; counter.hidden = !multi;
       if (photos.length) {
-        var name = photos[cur.index];
+        var name = webpName(photos[cur.index]);
         img.onload = fitCard;
-        img.onerror = function () { img.onerror = null; img.src = IMG_BASE + name; };
         img.src = WEB_DIR + name;
         img.alt = item.name + " — photo " + (cur.index + 1) + " of " + photos.length;
         counter.textContent = (cur.index + 1) + " / " + photos.length;
@@ -972,7 +972,7 @@
         preload(cur.index + 1); preload(cur.index - 1);
       }
     }
-    function preload(i) { var photos = cur.item.photos; if (i < 0 || i >= photos.length) return; var p = new Image(); p.src = WEB_DIR + photos[i]; }
+    function preload(i) { var photos = cur.item.photos; if (i < 0 || i >= photos.length) return; var p = new Image(); p.src = WEB_DIR + webpName(photos[i]); }
     function go(delta) { var n = cur.item.photos.length; if (!n) return; cur.index = (cur.index + delta + n) % n; show(); }
 
     prevBtn.addEventListener("click", function () { go(-1); });
