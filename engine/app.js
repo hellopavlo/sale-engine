@@ -674,22 +674,24 @@
       '<div class="cartp-backdrop"></div>' +
       '<aside class="cartp-panel" role="dialog" aria-label="Your cart">' +
         '<header class="cartp-head"><h2>Your cart</h2>' +
-          '<button class="cartp-close" type="button" aria-label="Close">&#10005;</button></header>' +
+          '<div class="cartp-head-actions">' +
+            '<button class="cartp-clear" type="button">Clear cart</button>' +
+            '<button class="cartp-close" type="button" aria-label="Close">&#10005;</button>' +
+          '</div></header>' +
         '<div class="cartp-items"></div>' +
         '<p class="cartp-empty">Your cart is empty. Tap ' +
-          '<strong>“Add to cart”</strong> on the items you want, then email the seller to hold them for you.</p>' +
+          '<strong>“Add to cart”</strong> on the items you want, then send your list to the seller to hold them for you.</p>' +
         '<footer class="cartp-foot">' +
           '<div class="cartp-total">' +
             '<span class="cartp-total-label">Total</span>' +
             '<span class="cartp-total-value"></span>' +
           '</div>' +
           '<p class="cartp-total-note" hidden></p>' +
-          '<p class="cartp-note">Email your list and the seller will hold these items for you. ' +
-            '<strong>No online payment</strong> — you arrange pickup and pay in person.</p>' +
+          '<p class="cartp-disclaimer"></p>' +
           '<div class="cartp-actions">' +
-            '<a class="cartp-email btn-primary" href="#">Reserve these — email the seller</a>' +
-            '<button class="cartp-copy btn" type="button">Copy share link</button>' +
-            '<button class="cartp-clear btn-ghost" type="button">Clear cart</button>' +
+            '<a class="cartp-email btn-primary" href="#">' + cartIcon() + 'Reserve via email</a>' +
+            '<div class="cartp-or"><span>or</span></div>' +
+            '<button class="cartp-copy btn" type="button">' + linkIcon() + 'Copy cart link</button>' +
           '</div>' +
         '</footer>' +
       '</aside>';
@@ -702,6 +704,8 @@
     var totalVal = root.querySelector(".cartp-total-value");
     var totalNote = root.querySelector(".cartp-total-note");
     var emailLink = root.querySelector(".cartp-email");
+    var orDivider = root.querySelector(".cartp-or");
+    var disclaimer = root.querySelector(".cartp-disclaimer");
     var copyBtn = root.querySelector(".cartp-copy");
     var clearBtn = root.querySelector(".cartp-clear");
     var countEl = pill.querySelector(".cart-pill-count");
@@ -857,10 +861,15 @@
       var hasItems = ids.length > 0;
       emptyMsg.hidden = hasItems;
       foot.hidden = !hasItems;
-      emailLink.hidden = !state.config.reserveEmail;
+      clearBtn.hidden = !hasItems;
+      var hasEmail = !!state.config.reserveEmail;
+      emailLink.hidden = !hasEmail;
+      orDivider.hidden = !hasEmail;
+      disclaimer.innerHTML = hasEmail
+        ? "<strong>Reserve via email</strong> opens your mail app with your cart ready to send. Or <strong>copy the cart link</strong> to send it yourself by text or messenger apps."
+        : "<strong>Copy the cart link</strong> and send it to the seller yourself by text or messenger apps.";
       if (hasItems) {
         emailLink.href = emailHref();
-        emailLink.textContent = "Reserve these — email the seller (" + units() + ")";
         var t = totals();
         totalRow.hidden = !t.priced;
         totalVal.textContent = money(t.sum);
@@ -1173,18 +1182,24 @@
   function cartIcon() {
     return '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">' +
       '<path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ' +
-      'd="M3 4h2l2.1 10.4a1.5 1.5 0 0 0 1.5 1.2h7.9a1.5 1.5 0 0 0 1.5-1.1L20.5 8H6"/>' +
-      '<circle cx="9.5" cy="19.5" r="1.4" fill="currentColor"/>' +
-      '<circle cx="17" cy="19.5" r="1.4" fill="currentColor"/></svg>';
+      'd="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>' +
+      '<circle cx="9" cy="21" r="1.3" fill="currentColor"/>' +
+      '<circle cx="20" cy="21" r="1.3" fill="currentColor"/></svg>';
+  }
+
+  function linkIcon() {
+    return '<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+      '<path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ' +
+      'd="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
   }
 
   function copyText(text, btn, okLabel) {
     function flash() {
       if (!btn) return;
-      var prev = btn.textContent;
+      var prev = btn.innerHTML;
       btn.textContent = okLabel || "Copied!";
       btn.classList.add("copied");
-      setTimeout(function () { btn.textContent = prev; btn.classList.remove("copied"); }, 1600);
+      setTimeout(function () { btn.innerHTML = prev; btn.classList.remove("copied"); }, 1600);
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(flash, function () { legacyCopy(text); flash(); });

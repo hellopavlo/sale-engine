@@ -604,6 +604,13 @@ body.cartp-open { overflow: hidden; }
   padding: 16px 20px; border-bottom: 1px solid var(--line);
 }
 .cartp-head h2 { margin: 0; font-size: 1.15rem; }
+.cartp-head-actions { display: flex; align-items: center; gap: 14px; }
+.cartp-clear {
+  border: 0; background: none; padding: 4px 6px; cursor: pointer; font: inherit;
+  font-size: .78rem; color: var(--muted); text-decoration: underline; text-underline-offset: 2px;
+}
+.cartp-clear:hover { color: var(--sold); }
+.cartp-clear[hidden] { display: none; }
 .cartp-close {
   width: 36px; height: 36px; border: 0; border-radius: 8px;
   background: none; color: var(--muted); font-size: 1.1rem; cursor: pointer;
@@ -648,14 +655,20 @@ body.cartp-open { overflow: hidden; }
 .cartp-empty[hidden] { display: none; }
 .cartp-foot { border-top: 1px solid var(--line); padding: 16px 20px 20px; }
 .cartp-foot[hidden] { display: none; }
-.cartp-total { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.cartp-total { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0; }
 .cartp-total[hidden] { display: none; }
 .cartp-total-label { font-size: .9rem; color: var(--muted); }
 .cartp-total-value { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-.cartp-total-note { margin: 0 0 12px; font-size: .78rem; color: var(--muted); }
+.cartp-total-note { margin: 4px 0 0; font-size: .78rem; color: var(--muted); }
 .cartp-total-note[hidden] { display: none; }
-.cartp-note { margin: 0 0 12px; font-size: .85rem; color: var(--muted); }
-.cartp-actions { display: flex; flex-direction: column; gap: 8px; }
+.cartp-disclaimer { margin: 12px 0 14px; font-size: .8rem; line-height: 1.45; color: var(--muted); }
+.cartp-actions { display: flex; flex-direction: column; gap: 14px; }
+.cartp-email, .cartp-copy { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.cartp-email svg, .cartp-copy svg { flex: none; }
+.cartp-or { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--muted); }
+.cartp-or[hidden] { display: none; }
+.cartp-or::before, .cartp-or::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.cartp-or span { font-size: .75rem; }
 .btn, .btn-primary, .btn-ghost {
   font: inherit; font-size: .92rem; font-weight: 600; text-align: center;
   padding: 11px 14px; border-radius: 9px; cursor: pointer; text-decoration: none;
