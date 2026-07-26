@@ -324,7 +324,7 @@
     syncFiltersFromURL(p);
     var cartParam = p.get("cart");
     if (cartParam != null) {
-      cart.setFromIds(cartParam.split(",").filter(Boolean)); // arrived via a shared link
+      cart.setFromTokens(cartParam.split(",").filter(Boolean)); // arrived via a shared link
       return true;
     }
     cart.loadStored(); // otherwise restore the saved cart, panel stays closed
@@ -356,7 +356,7 @@
     if (state.sort !== DEFAULT_SORT) p.set("s", state.sort);
     if (state.activeCategories.size) p.set("c", Array.from(state.activeCategories).join(","));
     if (state.lbItem) p.set("item", state.lbItem);
-    if (cart && cart.size() && cart.isOpen()) p.set("cart", cart.ids().join(","));
+    if (cart && cart.size() && cart.isOpen()) p.set("cart", cart.serialize());
     return p;
   }
 
@@ -602,6 +602,10 @@
 
   function fmtNum(n) { return Number.isInteger(n) ? String(n) : n.toFixed(2); }
 
+  function money(n) { return (state.config.currency || "$") + fmtNum(n); }
+
+  function maxQty(it) { return (it && it.quantity && it.quantity > 1) ? it.quantity : 1; }
+
   function formatPrice(it) {
     if (it.priceNum == null) return it.priceRaw ? escapeHTML(it.priceRaw) : "N/A";
     if (it.priceNum === 0) return "Free";
@@ -635,7 +639,8 @@
   /* ---------- reserve list ("cart") ---------- */
 
   function createCart() {
-    var ids = []; // item ids; persisted to localStorage, mirrored to ?cart= only while the panel is open
+    var ids = [];
+    var qtys = {};
     var toastTimer = null;
     var STORE_KEY = "sale-cart:" + location.pathname;
 
@@ -675,6 +680,11 @@
         '<p class="cartp-empty">Your cart is empty. Tap ' +
           '<strong>“Add to cart”</strong> on the items you want, then email the seller to hold them for you.</p>' +
         '<footer class="cartp-foot">' +
+          '<div class="cartp-total">' +
+            '<span class="cartp-total-label">Estimated total</span>' +
+            '<span class="cartp-total-value"></span>' +
+          '</div>' +
+          '<p class="cartp-total-note" hidden></p>' +
           '<p class="cartp-note">Email your list and the seller will hold these items for you. ' +
             '<strong>No online payment</strong> — you arrange pickup and pay in person.</p>' +
           '<div class="cartp-actions">' +
@@ -689,6 +699,9 @@
     var itemsBox = root.querySelector(".cartp-items");
     var emptyMsg = root.querySelector(".cartp-empty");
     var foot = root.querySelector(".cartp-foot");
+    var totalRow = root.querySelector(".cartp-total");
+    var totalVal = root.querySelector(".cartp-total-value");
+    var totalNote = root.querySelector(".cartp-total-note");
     var emailLink = root.querySelector(".cartp-email");
     var copyBtn = root.querySelector(".cartp-copy");
     var clearBtn = root.querySelector(".cartp-clear");
@@ -712,10 +725,29 @@
       id = String(id);
       var i = ids.indexOf(id);
       var adding = i === -1;
-      if (adding) ids.push(id); else ids.splice(i, 1);
+      if (adding) { ids.push(id); qtys[id] = 1; } else { ids.splice(i, 1); delete qtys[id]; }
       changed();
       if (!root.hidden) renderPanel();   // panel open: row updates in place, no toast
       else if (adding) notifyAdded();
+    }
+
+    function getQty(id) {
+      id = String(id);
+      var it = state.byId[id];
+      var cap = maxQty(it);
+      var n = qtys[id] || 1;
+      return Math.max(1, Math.min(cap, n));
+    }
+    function setQty(id, n) {
+      id = String(id);
+      if (ids.indexOf(id) === -1) return;
+      var cap = maxQty(state.byId[id]);
+      qtys[id] = Math.max(1, Math.min(cap, n | 0));
+      changed();
+      if (!root.hidden) renderPanel();
+    }
+    function units() {
+      return ids.reduce(function (sum, id) { return sum + getQty(id); }, 0);
     }
 
     function notifyAdded() {
@@ -724,52 +756,101 @@
       toastTimer = setTimeout(hideToast, 4000);
     }
     function hideToast() { toast.hidden = true; clearTimeout(toastTimer); }
-    function setFromIds(list) {
+    function setFromTokens(list) {
       var seen = {};
-      ids = list.map(String).filter(function (id) {
-        if (seen[id] || !state.byId[id]) return false; seen[id] = true; return true;
+      ids = [];
+      qtys = {};
+      list.forEach(function (tok) {
+        var parts = String(tok).split(":");
+        var id = parts[0];
+        if (!id || seen[id] || !state.byId[id]) return;
+        seen[id] = true;
+        ids.push(id);
+        var n = parseInt(parts[1], 10);
+        qtys[id] = Math.max(1, Math.min(maxQty(state.byId[id]), isNaN(n) ? 1 : n));
       });
       changed();
     }
 
+    function serialize() {
+      return ids.map(function (id) {
+        var q = getQty(id);
+        return q > 1 ? id + ":" + q : id;
+      }).join(",");
+    }
+
     function changed() {
-      countEl.textContent = ids.length;
+      var u = units();
+      countEl.textContent = u;
       pill.hidden = ids.length === 0;
-      pill.setAttribute("aria-label", "Cart, " + ids.length + (ids.length === 1 ? " item" : " items"));
+      pill.setAttribute("aria-label", "Cart, " + u + (u === 1 ? " item" : " items"));
       if (ids.length === 0) hideToast(); // nothing left to review — don't leave a stale confirmation up
       syncCartButtons();
       writeURL();
       saveStored();
     }
     function saveStored() {
-      try { localStorage.setItem(STORE_KEY, ids.join(",")); } catch (e) { /* storage unavailable */ }
+      try { localStorage.setItem(STORE_KEY, serialize()); } catch (e) { /* storage unavailable */ }
     }
     // Restore a saved cart without opening the panel (unlike an incoming ?cart= link).
     function loadStored() {
       var raw = null;
       try { raw = localStorage.getItem(STORE_KEY); } catch (e) { /* storage unavailable */ }
-      if (raw) setFromIds(raw.split(",").filter(Boolean));
+      if (raw) setFromTokens(raw.split(",").filter(Boolean));
     }
 
     function cartLink() {
       var base = location.origin + location.pathname;
-      return ids.length ? base + "?cart=" + ids.join(",") : base;
+      return ids.length ? base + "?cart=" + serialize() : base;
+    }
+
+    function totals() {
+      var sum = 0, priced = 0, unpriced = 0;
+      ids.forEach(function (id) {
+        var it = state.byId[id];
+        if (!it) return;
+        if (it.priceNum == null) unpriced++;
+        else { priced++; sum += it.priceNum * getQty(id); }
+      });
+      return { sum: sum, priced: priced, unpriced: unpriced };
+    }
+
+    function emailPrice(it, q) {
+      if (it.priceNum == null) return "price on request";
+      if (it.priceNum === 0) return q > 1 ? q + " × Free" : "Free";
+      var unit = money(it.priceNum);
+      return q > 1 ? q + " × " + unit + " = " + money(it.priceNum * q) : unit;
     }
 
     function emailHref() {
       var to = state.config.reserveEmail || "";
       var lines = ids.map(function (id) {
         var it = state.byId[id];
-        return it ? "- " + it.name + " (" + it.category + ")" : "- item " + id;
+        if (!it) return "- item " + id;
+        return "- " + it.name + " (" + it.category + ") — " + emailPrice(it, getQty(id));
       });
+      var t = totals();
+      var summary = "";
+      if (t.priced) summary += "\n\nEstimated total: " + money(t.sum);
+      if (t.unpriced) summary += (t.priced ? "\n" : "\n\n") +
+        "(+ " + t.unpriced + (t.unpriced === 1 ? " item" : " items") + " priced on request)";
       var subject = "Reserve request — " + (state.config.title || "Sale");
       var body =
         "Hi! I'd like to reserve these items:\n\n" +
         lines.join("\n") +
+        summary +
         "\n\nMy list link: " + cartLink() + "\n";
       return "mailto:" + encodeURIComponent(to) +
         "?subject=" + encodeURIComponent(subject) +
         "&body=" + encodeURIComponent(body);
+    }
+
+    function rowPriceHTML(it, q) {
+      if (it.priceNum == null) return '<span class="cartp-price cartp-price-req">Price on request</span>';
+      var lineVal = it.priceNum === 0 ? "Free" : money(it.priceNum * q);
+      var html = '<span class="cartp-price">' + lineVal + "</span>";
+      if (q > 1 && it.priceNum > 0) html += '<span class="cartp-breakdown">' + q + " × " + money(it.priceNum) + "</span>";
+      return html;
     }
 
     function renderPanel() {
@@ -780,23 +861,46 @@
       emailLink.hidden = !state.config.reserveEmail;
       if (hasItems) {
         emailLink.href = emailHref();
-        emailLink.textContent = "Reserve these — email the seller (" + ids.length + ")";
+        emailLink.textContent = "Reserve these — email the seller (" + units() + ")";
+        var t = totals();
+        totalRow.hidden = !t.priced;
+        totalVal.textContent = money(t.sum);
+        totalNote.hidden = !t.unpriced;
+        if (t.unpriced) totalNote.textContent =
+          "+ " + t.unpriced + (t.unpriced === 1 ? " item" : " items") + " priced on request";
       }
 
       ids.forEach(function (id) {
         var it = state.byId[id];
         if (!it) return;
+        var q = getQty(id);
+        var cap = maxQty(it);
         var row = document.createElement("div");
         row.className = "cartp-row";
         var thumb = it.photos.length
           ? '<img class="cartp-thumb" loading="lazy" alt="" src="' + THUMB_DIR + webpName(it.photos[0]) + '">'
           : '<span class="cartp-thumb is-empty" aria-hidden="true"></span>';
+        var stepper = cap > 1
+          ? '<span class="cartp-qty">' +
+              '<button class="cartp-qtybtn cartp-minus" type="button" aria-label="Decrease quantity"' + (q <= 1 ? " disabled" : "") + ">&#8722;</button>" +
+              '<span class="cartp-qtyval">' + q + "</span>" +
+              '<button class="cartp-qtybtn cartp-plus" type="button" aria-label="Increase quantity"' + (q >= cap ? " disabled" : "") + ">+</button>" +
+            "</span>"
+          : "";
         row.innerHTML =
           thumb +
-          '<span class="cartp-info"><span class="cartp-name">' + escapeHTML(it.name) +
-          '</span><span class="cartp-cat">' + escapeHTML(it.category) + "</span></span>" +
+          '<span class="cartp-info">' +
+            '<span class="cartp-name">' + escapeHTML(it.name) + "</span>" +
+            '<span class="cartp-cat">' + escapeHTML(it.category) + "</span>" +
+            rowPriceHTML(it, q) +
+          "</span>" +
+          stepper +
           '<button class="cartp-remove" type="button" aria-label="Remove ' + escapeHTML(it.name) + '">&#10005;</button>';
         row.querySelector(".cartp-remove").addEventListener("click", function () { toggle(id); });
+        var minus = row.querySelector(".cartp-minus");
+        var plus = row.querySelector(".cartp-plus");
+        if (minus) minus.addEventListener("click", function () { setQty(id, getQty(id) - 1); });
+        if (plus) plus.addEventListener("click", function () { setQty(id, getQty(id) + 1); });
         itemsBox.appendChild(row);
       });
     }
@@ -805,12 +909,12 @@
     function close() { root.hidden = true; document.body.classList.remove("cartp-open"); writeURL(); }
 
     // init pill state
-    countEl.textContent = ids.length;
+    countEl.textContent = units();
     pill.hidden = ids.length === 0;
 
     return {
-      has: has, toggle: toggle, setFromIds: setFromIds, loadStored: loadStored,
-      size: function () { return ids.length; }, ids: function () { return ids.slice(); },
+      has: has, toggle: toggle, setFromTokens: setFromTokens, loadStored: loadStored,
+      size: function () { return ids.length; }, serialize: serialize,
       open: open, isOpen: function () { return !root.hidden; },
     };
   }

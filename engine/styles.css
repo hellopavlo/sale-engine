@@ -623,6 +623,23 @@ body.cartp-open { overflow: hidden; }
 .cartp-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .cartp-name { font-weight: 600; font-size: .95rem; }
 .cartp-cat { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.cartp-price { font-size: .85rem; font-weight: 600; margin-top: 3px; }
+.cartp-price-req { font-weight: 500; color: var(--muted); }
+.cartp-breakdown { font-size: .72rem; color: var(--muted); margin-top: 1px; }
+.cartp-qty {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 2px;
+  border: 1px solid var(--line); border-radius: 8px; padding: 2px;
+}
+.cartp-qtybtn {
+  width: 26px; height: 26px; border: 0; border-radius: 6px;
+  background: none; color: var(--ink); font-size: 1rem; line-height: 1; cursor: pointer;
+}
+.cartp-qtybtn:hover:not(:disabled) { background: var(--line); }
+.cartp-qtybtn:disabled { color: var(--muted); opacity: .4; cursor: default; }
+.cartp-qtyval {
+  min-width: 20px; text-align: center; font-size: .9rem; font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 .cartp-remove {
   flex: 0 0 auto; width: 30px; height: 30px; border: 0; border-radius: 7px;
   background: none; color: var(--muted); cursor: pointer;
@@ -632,6 +649,12 @@ body.cartp-open { overflow: hidden; }
 .cartp-empty[hidden] { display: none; }
 .cartp-foot { border-top: 1px solid var(--line); padding: 16px 20px 20px; }
 .cartp-foot[hidden] { display: none; }
+.cartp-total { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.cartp-total[hidden] { display: none; }
+.cartp-total-label { font-size: .9rem; color: var(--muted); }
+.cartp-total-value { font-size: 1.25rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cartp-total-note { margin: 0 0 12px; font-size: .78rem; color: var(--muted); }
+.cartp-total-note[hidden] { display: none; }
 .cartp-note { margin: 0 0 12px; font-size: .85rem; color: var(--muted); }
 .cartp-actions { display: flex; flex-direction: column; gap: 8px; }
 .btn, .btn-primary, .btn-ghost {
