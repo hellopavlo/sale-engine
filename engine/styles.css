@@ -261,16 +261,11 @@ button.card-media:hover img { transform: scale(1.03); }
 .photo-count svg { display: block; }
 
 .status {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .06em;
-  padding: 5px 9px;
-  border-radius: 6px;
+  align-self: flex-start; margin-top: 4px;
+  display: inline-flex; align-items: center;
+  font-size: 12px; font-weight: 500; line-height: 1.4;
+  padding: 2px 9px; border-radius: 999px; white-space: nowrap;
   color: #fff;
-  text-transform: uppercase;
 }
 .status-sold { background: var(--sold); }
 .status-reserved { background: var(--reserved); }
@@ -286,8 +281,6 @@ button.card-media:hover img { transform: scale(1.03); }
 .card-price { font-size: 18px; font-weight: 700; color: var(--ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .card-full { font-weight: 400; font-size: .78em; color: var(--muted); text-decoration: line-through; margin-left: 10px; }
 .card-unit { font-weight: 400; font-size: .7em; color: var(--muted); margin-left: 3px; }
-/* price + condition share a row: price anchors left, condition chip sits right */
-.card-priceline { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 /* quantity = plain muted text (self-describing via the "available" unit) */
 .card-qty { font-size: 13px; line-height: 1.4; color: var(--muted); }
 
@@ -297,8 +290,9 @@ button.card-media:hover img { transform: scale(1.03); }
   display: inline-flex; align-items: center;
   font-size: 12px; font-weight: 500; line-height: 1.4;
   padding: 2px 9px; border-radius: 999px; white-space: nowrap;
-  background: #f1f5f9; color: #334155; /* default / unknown = neutral */
+  background: #f1f5f9; color: #334155;
 }
+.cond-overlay { position: absolute; top: 10px; left: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.28); }
 /* Muted cool->warm ordinal, best to worst; each rung a distinct hue, all WCAG AA. */
 .card-condition.cond-new      { background: #d6ece0; color: #1d5a43; } /* muted green */
 .card-condition.cond-likenew  { background: #d5eaec; color: #1c6168; } /* muted teal */

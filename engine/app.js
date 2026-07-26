@@ -490,23 +490,25 @@
   function card(it, pos) {
     var el = document.createElement("article");
     el.className = "card status-is-" + it.status;
-    el.appendChild(buildMedia(it, pos));
+    var media = buildMedia(it, pos);
+    if (it.condition) {
+      var cond = document.createElement("span");
+      cond.className = "card-condition cond-overlay " + conditionClass(it.condition);
+      cond.textContent = it.condition;
+      media.appendChild(cond);
+    }
+    el.appendChild(media);
 
     var body = document.createElement("div");
     body.className = "card-body";
 
     var content = document.createElement("div");
     content.className = "card-content";
-    var condChip = it.condition
-      ? '<span class="card-condition ' + conditionClass(it.condition) + '">' + escapeHTML(it.condition) + "</span>"
-      : "";
     content.innerHTML =
       '<div class="card-head">' +
         '<h2 class="card-name">' + escapeHTML(it.name) + "</h2>" +
-        '<div class="card-priceline">' +
-          '<span class="card-price">' + priceHTML(it) + "</span>" +
-          condChip +
-        "</div>" +
+        '<span class="card-price">' + priceHTML(it) + "</span>" +
+        (it.status !== "available" ? '<span class="status status-' + it.status + '">' + cap(it.status) + "</span>" : "") +
       "</div>" +
       (it.quantity && it.quantity > 1 ? '<div class="card-qty">' + it.quantity + " available</div>" : "") +
       (it.description
@@ -567,12 +569,6 @@
       }
     } else {
       media.appendChild(placeholder());
-    }
-    if (it.status !== "available") {
-      var badge = document.createElement("span");
-      badge.className = "status status-" + it.status;
-      badge.textContent = it.status === "sold" ? "SOLD" : cap(it.status);
-      media.appendChild(badge);
     }
     return media;
   }
