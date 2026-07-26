@@ -680,7 +680,7 @@
           '<strong>“Add to cart”</strong> on the items you want, then email the seller to hold them for you.</p>' +
         '<footer class="cartp-foot">' +
           '<div class="cartp-total">' +
-            '<span class="cartp-total-label">Estimated total</span>' +
+            '<span class="cartp-total-label">Total</span>' +
             '<span class="cartp-total-value"></span>' +
           '</div>' +
           '<p class="cartp-total-note" hidden></p>' +
@@ -830,7 +830,7 @@
       });
       var t = totals();
       var summary = "";
-      if (t.priced) summary += "\n\nEstimated total: " + money(t.sum);
+      if (t.priced) summary += "\n\nTotal: " + money(t.sum);
       if (t.unpriced) summary += (t.priced ? "\n" : "\n\n") +
         "(+ " + t.unpriced + (t.unpriced === 1 ? " item" : " items") + " priced on request)";
       var subject = "Reserve request — " + (state.config.title || "Sale");
