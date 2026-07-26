@@ -714,7 +714,7 @@
       copyText(cartLink(), copyBtn, "Copied!");
     });
     clearBtn.addEventListener("click", function () {
-      ids = []; changed(); renderPanel();
+      ids = []; qtys = {}; changed(); close();
     });
     document.addEventListener("keydown", function (e) {
       if (!root.hidden && e.key === "Escape") close();
