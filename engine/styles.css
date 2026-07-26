@@ -299,11 +299,13 @@ button.card-media:hover img { transform: scale(1.03); }
   padding: 2px 9px; border-radius: 999px; white-space: nowrap;
   background: #f1f5f9; color: #334155; /* default / unknown = neutral */
 }
-.card-condition.cond-new,
-.card-condition.cond-likenew { background: #e0f2fe; color: #0c4a6e; } /* positive = sky */
-.card-condition.cond-good     { background: #f1f5f9; color: #334155; } /* fine = neutral */
-.card-condition.cond-fair     { background: #fef3c7; color: #92400e; } /* caution = amber */
-.card-condition.cond-forparts { background: #fee2e2; color: #991b1b; } /* defect = red */
+/* Muted cool->warm ordinal, best to worst; each rung a distinct hue, all WCAG AA. */
+.card-condition.cond-new      { background: #d6ece0; color: #1d5a43; } /* muted green */
+.card-condition.cond-likenew  { background: #d5eaec; color: #1c6168; } /* muted teal */
+.card-condition.cond-good     { background: #dee9f4; color: #2d5480; } /* muted blue */
+.card-condition.cond-fair     { background: #f5ecca; color: #7a5511; } /* muted amber */
+.card-condition.cond-poor     { background: #f6e4d2; color: #894d26; } /* muted orange */
+.card-condition.cond-forparts { background: #efdcd8; color: #883e32; } /* muted clay */
 .card-descwrap { display: flex; flex-direction: column; gap: 8px; }
 .card-desc {
   margin: 0; font-size: 14px; line-height: 1.5; color: #52555c;

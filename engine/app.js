@@ -631,6 +631,7 @@
     if (k === "like new") return "cond-likenew";
     if (k === "good") return "cond-good";
     if (k === "fair") return "cond-fair";
+    if (k === "poor") return "cond-poor";
     if (k === "for parts") return "cond-forparts";
     return "cond-default";
   }
