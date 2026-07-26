@@ -1,4 +1,3 @@
-/* Sale engine — generic and reusable across sales. */
 (function () {
   "use strict";
 
@@ -23,8 +22,8 @@
   };
 
   var els = {};
-  var lb = null;   // lightbox controller
-  var cart = null; // reserve-list controller
+  var lb = null;
+  var cart = null;
   var booted = false;
   var editingSearch = false; // true while consecutive search keystrokes coalesce into one history entry
 
@@ -73,7 +72,7 @@
         state.items.forEach(function (it) { state.byId[it.id] = it; });
         buildCategoryMenu();
         if (!booted) {
-          var hadCartParam = readURL(); // apply shareable state on first load
+          var hadCartParam = readURL();
           booted = true;
           lb.applyURL(paramsFromURL()); // deep-link: open ?item= before the first render, so its URL-write keeps the param
           render();
@@ -346,7 +345,7 @@
       syncFiltersFromURL(p);
       render("none");
     }
-    if (lb) lb.applyURL(p); // open/close the fullscreen card to match ?item=
+    if (lb) lb.applyURL(p);
   }
 
   function currentParams() {

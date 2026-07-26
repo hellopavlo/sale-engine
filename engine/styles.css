@@ -1,4 +1,3 @@
-/* Sale engine styles — generic and reusable across sales. */
 :root {
   --bg: #f7f7f5;
   --surface: #ffffff;
@@ -294,12 +293,12 @@ button.card-media:hover img { transform: scale(1.03); }
 }
 .cond-overlay { position: absolute; top: 10px; left: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.28); }
 /* Muted cool->warm ordinal, best to worst; each rung a distinct hue, all WCAG AA. */
-.card-condition.cond-new      { background: #d6ece0; color: #1d5a43; } /* muted green */
-.card-condition.cond-likenew  { background: #d5eaec; color: #1c6168; } /* muted teal */
-.card-condition.cond-good     { background: #dee9f4; color: #2d5480; } /* muted blue */
-.card-condition.cond-fair     { background: #f5ecca; color: #7a5511; } /* muted amber */
-.card-condition.cond-poor     { background: #f6e4d2; color: #894d26; } /* muted orange */
-.card-condition.cond-forparts { background: #efdcd8; color: #883e32; } /* muted clay */
+.card-condition.cond-new      { background: #d6ece0; color: #1d5a43; }
+.card-condition.cond-likenew  { background: #d5eaec; color: #1c6168; }
+.card-condition.cond-good     { background: #dee9f4; color: #2d5480; }
+.card-condition.cond-fair     { background: #f5ecca; color: #7a5511; }
+.card-condition.cond-poor     { background: #f6e4d2; color: #894d26; }
+.card-condition.cond-forparts { background: #efdcd8; color: #883e32; }
 .card-descwrap { display: flex; flex-direction: column; gap: 8px; }
 .card-desc {
   margin: 0; font-size: 14px; line-height: 1.5; color: #52555c;
