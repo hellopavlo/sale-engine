@@ -598,6 +598,9 @@ body.cartp-open { overflow: hidden; }
   flex-direction: column;
   animation: cartp-in .18s ease;
 }
+/* Programmatic focus target on open (tabindex="-1"); the panel itself is never
+   tabbed to, so suppressing its own outline never hides an interactive control's. */
+.cartp-panel:focus { outline: none; }
 @keyframes cartp-in { from { transform: translateX(24px); opacity: .6; } to { transform: none; opacity: 1; } }
 .cartp-head {
   display: flex; align-items: center; justify-content: space-between;

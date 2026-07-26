@@ -672,7 +672,7 @@
     root.hidden = true;
     root.innerHTML =
       '<div class="cartp-backdrop"></div>' +
-      '<aside class="cartp-panel" role="dialog" aria-label="Your cart">' +
+      '<aside class="cartp-panel" role="dialog" aria-label="Your cart" tabindex="-1">' +
         '<header class="cartp-head"><h2>Your cart</h2>' +
           '<div class="cartp-head-actions">' +
             '<button class="cartp-clear" type="button">Clear cart</button>' +
@@ -912,7 +912,7 @@
       });
     }
 
-    function open() { hideToast(); renderPanel(); root.hidden = false; document.body.classList.add("cartp-open"); root.querySelector(".cartp-close").focus(); writeURL(); }
+    function open() { hideToast(); renderPanel(); root.hidden = false; document.body.classList.add("cartp-open"); root.querySelector(".cartp-panel").focus(); writeURL(); }
     function close() { root.hidden = true; document.body.classList.remove("cartp-open"); writeURL(); }
 
     // init pill state
