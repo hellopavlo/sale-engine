@@ -830,7 +830,7 @@
       var lines = ids.map(function (id) {
         var it = state.byId[id];
         if (!it) return "- item " + id;
-        return "- " + it.name + " (" + it.category + ") — " + emailPrice(it, getQty(id));
+        return "- " + it.name + " — " + emailPrice(it, getQty(id));
       });
       var t = totals();
       var summary = "";
