@@ -899,7 +899,6 @@
           thumb +
           '<span class="cartp-info">' +
             '<span class="cartp-name">' + escapeHTML(it.name) + "</span>" +
-            '<span class="cartp-cat">' + escapeHTML(it.category) + "</span>" +
             rowPriceHTML(it, q) +
           "</span>" +
           stepper +

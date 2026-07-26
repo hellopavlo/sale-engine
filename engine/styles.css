@@ -628,7 +628,6 @@ body.cartp-open { overflow: hidden; }
 }
 .cartp-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .cartp-name { font-weight: 600; font-size: .95rem; }
-.cartp-cat { font-size: .75rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .cartp-price { font-size: .85rem; font-weight: 600; margin-top: 3px; }
 .cartp-price-req { font-weight: 500; color: var(--muted); }
 .cartp-breakdown { font-size: .72rem; color: var(--muted); margin-top: 1px; }
